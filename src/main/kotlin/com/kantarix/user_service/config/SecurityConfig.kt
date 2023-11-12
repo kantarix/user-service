@@ -7,8 +7,9 @@ import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.http.SessionCreationPolicy
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
-import org.springframework.security.web.DefaultSecurityFilterChain
+import org.springframework.security.web.SecurityFilterChain
 
 
 @Configuration
@@ -16,15 +17,15 @@ import org.springframework.security.web.DefaultSecurityFilterChain
 class SecurityConfig {
 
     @Bean
-    fun configure(http: HttpSecurity): DefaultSecurityFilterChain =
+    fun filterChain(http: HttpSecurity): SecurityFilterChain =
         http
             .csrf().disable()
             .authorizeRequests()
-            .antMatchers("/auth/login", "/auth/registration", "/logout").permitAll()
+            .antMatchers("/api/register", "/api/auth", "/api/refresh", "/api/signout").permitAll()
             .anyRequest().authenticated()
             .and()
-            .logout()
-            .logoutUrl("/logout")
+            .sessionManagement()
+            .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             .and()
             .build()
 

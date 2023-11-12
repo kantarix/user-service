@@ -3,20 +3,28 @@ package com.kantarix.user_service.api.exceptions
 import org.springframework.http.HttpStatus
 
 enum class ApiError(
-    val httpStatus: HttpStatus,
-    val message: String,
+    private val httpStatus: HttpStatus,
+    private val message: String,
 ) {
     USERNAME_ALREADY_TAKEN(
         HttpStatus.CONFLICT,
         "This username is already taken."
     ),
-    INCORRECT_CREDENTIALS(
+    PASSWORD_MISMATCH(
         HttpStatus.BAD_REQUEST,
-        "Incorrect credentials."
+        "Password mismatch."
     ),
     USER_NOT_FOUND(
         HttpStatus.BAD_REQUEST,
         "User not found."
+    ),
+    INCORRECT_TOKEN(
+        HttpStatus.BAD_REQUEST,
+        "Token does not exist."
+    ),
+    EXPIRED_TOKEN(
+        HttpStatus.BAD_REQUEST,
+        "Token was expired."
     ),
     ;
 

@@ -14,6 +14,8 @@ class UserEntity (
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Int = -1,
 
+    val name: String,
+
     val username: String,
 
     val password: String,

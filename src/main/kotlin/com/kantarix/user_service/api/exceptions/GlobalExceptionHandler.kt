@@ -1,5 +1,7 @@
 package com.kantarix.user_service.api.exceptions
 
+import com.auth0.jwt.exceptions.JWTVerificationException
+import com.auth0.jwt.exceptions.TokenExpiredException
 import com.kantarix.user_service.api.dto.ErrorDto
 import mu.KotlinLogging
 import org.springframework.http.ResponseEntity
@@ -33,12 +35,14 @@ class GlobalExceptionHandler {
         )
     }
 
-    @ExceptionHandler(Exception::class)
-    fun handleException(ex: Exception): ResponseEntity<ErrorDto> {
+    @ExceptionHandler(JWTVerificationException::class)
+    fun handleVerificationException(ex: JWTVerificationException): ResponseEntity<ErrorDto> {
         log.debug(ex) { ex.message }
-        return ResponseEntity.badRequest().body(
-            ErrorDto(code = "INTERNAL_API_EXCEPTION", messages = listOf("Something went wrong."))
-        )
+        val apiError = when (ex) {
+            TokenExpiredException::class -> ApiError.EXPIRED_TOKEN
+            else -> ApiError.INCORRECT_TOKEN
+        }
+        return handleApiException(apiError.toException())
     }
 
 }
