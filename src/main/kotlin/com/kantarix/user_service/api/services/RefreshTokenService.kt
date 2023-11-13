@@ -59,4 +59,8 @@ class RefreshTokenService(
     fun deleteByAccessToken(accessTokenId: UUID) =
         refreshTokenRepository.deleteByAccessToken(accessTokenId)
 
+    @Transactional
+    fun deleteAllExpiredTokens(time: Instant = Instant.now()) =
+        refreshTokenRepository.deleteAllByExpiresAtLessThan(time)
+
 }

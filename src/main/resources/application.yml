@@ -1,6 +1,9 @@
 server:
   port: 5000
 
+schedulers:
+  enabled: true
+
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5433/user_service_db
