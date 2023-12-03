@@ -44,6 +44,10 @@ dependencies {
 
 	implementation("net.javacrumbs.shedlock:shedlock-spring:5.9.1")
 	implementation("net.javacrumbs.shedlock:shedlock-provider-jdbc-template:5.9.1")
+
+	implementation("org.springdoc:springdoc-openapi-kotlin:1.6.15")
+	implementation("org.springdoc:springdoc-openapi-ui:1.6.15")
+	implementation("org.springdoc:springdoc-openapi-webmvc-core:1.6.15")
 }
 
 allOpen {

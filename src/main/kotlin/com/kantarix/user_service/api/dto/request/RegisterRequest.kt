@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import org.hibernate.validator.constraints.Length
 import javax.validation.constraints.NotBlank
 
-data class UserRegisterRequest(
+data class RegisterRequest(
     @field:NotBlank
     @field:Length(min = 2)
     @JsonProperty("name")
@@ -20,7 +20,7 @@ data class UserRegisterRequest(
     private val _password: String?,
 
     @field:Length(min = 8)
-    @JsonProperty("confirm_password")
+    @JsonProperty("confirmPassword")
     private val _confirmPassword: String?,
 ) {
     val name: String

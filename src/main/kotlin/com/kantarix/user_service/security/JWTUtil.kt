@@ -19,9 +19,10 @@ class JWTUtil(
     val tokenTtlMs: Long,
 ) {
 
-    fun generateToken(username: String) =
+    fun generateToken(username: String, userId: Int) =
         JWT.create()
             .withSubject("user details")
+            .withClaim(userIdClaim, userId.toString())
             .withClaim(usernameClaim, username)
             .withClaim(uuidClaim, UUID.randomUUID().toString())
             .withIssuedAt(Date())
@@ -39,6 +40,9 @@ class JWTUtil(
             .getClaim(claim)
             .asString()
 
+    fun retrieveUserId(token: String) =
+        validateTokenAndRetrieveClaim(token, userIdClaim).toIntOrNull()
+
     fun retrieveUsername(token: String) =
         validateTokenAndRetrieveClaim(token, usernameClaim)
 
@@ -46,6 +50,7 @@ class JWTUtil(
         UUID.fromString(validateTokenAndRetrieveClaim(token, uuidClaim))
 
     companion object {
+        private const val userIdClaim = "userId"
         private const val usernameClaim = "username"
         private const val uuidClaim = "uuid"
     }

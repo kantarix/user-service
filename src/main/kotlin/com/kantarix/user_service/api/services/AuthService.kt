@@ -1,15 +1,16 @@
 package com.kantarix.user_service.api.services
 
-import com.kantarix.user_service.api.dto.Tokens
-import com.kantarix.user_service.api.dto.request.AccessTokenRequest
-import com.kantarix.user_service.api.dto.request.TokensRequest
-import com.kantarix.user_service.api.dto.request.UserAuthRequest
-import com.kantarix.user_service.api.dto.request.UserRegisterRequest
+import com.kantarix.user_service.api.dto.TokenPair
+import com.kantarix.user_service.api.dto.request.AuthRequest
+import com.kantarix.user_service.api.dto.request.PasswordRequest
+import com.kantarix.user_service.api.dto.request.RefreshTokenRequest
+import com.kantarix.user_service.api.dto.request.RegisterRequest
 import com.kantarix.user_service.api.exceptions.ApiError
 import com.kantarix.user_service.api.repositories.UserRepository
 import com.kantarix.user_service.security.JWTUtil
 import com.kantarix.user_service.security.UserDetails
 import com.kantarix.user_service.store.entities.UserEntity
+import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.authentication.AuthenticationManager
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.crypto.password.PasswordEncoder
@@ -27,11 +28,11 @@ class AuthService(
 ) {
 
     @Transactional
-    fun register(userRegisterRequest: UserRegisterRequest): Tokens {
-        if (userRegisterRequest.password != userRegisterRequest.confirmPassword)
+    fun register(registerRequest: RegisterRequest): TokenPair {
+        if (registerRequest.password != registerRequest.confirmPassword)
             throw ApiError.PASSWORD_MISMATCH.toException()
 
-        userRegisterRequest.toEntity()
+        registerRequest.toEntity()
             .let {
                 userRepository
                     .findByUsername(it.username)
@@ -39,14 +40,14 @@ class AuthService(
                     ?: userRepository.save(it)
             }
 
-        return auth(UserAuthRequest(userRegisterRequest.username, userRegisterRequest.password))
+        return auth(AuthRequest(registerRequest.username, registerRequest.password))
     }
 
     @Transactional
-    fun auth(userAuthRequest: UserAuthRequest): Tokens {
+    fun auth(authRequest: AuthRequest): TokenPair {
         val authToken = UsernamePasswordAuthenticationToken(
-            userAuthRequest.username,
-            userAuthRequest.password
+            authRequest.username,
+            authRequest.password
         )
 
         val user = authenticationManager.authenticate(authToken).principal as UserDetails
@@ -55,8 +56,8 @@ class AuthService(
     }
 
     @Transactional
-    fun refresh(tokens: TokensRequest): Tokens =
-        refreshTokenService.findById(tokens.refreshToken)
+    fun refresh(tokenRequest: RefreshTokenRequest): TokenPair =
+        refreshTokenService.findById(tokenRequest.refreshToken)
             ?.let {
                 if (!refreshTokenService.isExpired(it))
                     generateTokens(it.user.username, it.id)
@@ -68,14 +69,14 @@ class AuthService(
     private fun generateTokens(
         username: String,
         refreshToken: UUID? = null,
-    ): Tokens =
+    ): TokenPair =
         userRepository.findByUsername(username)
             ?.let {
-                val newAccessToken = jwtUtil.generateToken(username)
+                val newAccessToken = jwtUtil.generateToken(it.username, it.id)
                 val newRefreshToken = refreshToken
                     ?.let { refreshTokenService.updateAccessToken(token = it, accessTokenId = jwtUtil.retrieveUUID(newAccessToken)) }
                     ?: refreshTokenService.generateToken(accessTokenId = jwtUtil.retrieveUUID(newAccessToken), user = it)
-                return Tokens(
+                return TokenPair(
                     accessToken = newAccessToken,
                     refreshToken = newRefreshToken,
                     ttlMs = jwtUtil.tokenTtlMs,
@@ -84,12 +85,26 @@ class AuthService(
             ?: throw ApiError.USER_NOT_FOUND.toException()
 
     @Transactional
-    fun signout(accessTokenRequest: AccessTokenRequest) =
+    fun signout(accessToken: String) =
         refreshTokenService.deleteByAccessToken(
-            jwtUtil.retrieveUUID(accessTokenRequest.accessToken)
-        ).also { println("hello") }
+            jwtUtil.retrieveUUID(accessToken)
+        )
 
-    private fun UserRegisterRequest.toEntity() =
+    @Transactional
+    fun deleteAccount(accessToken: String, passwordRequest: PasswordRequest) =
+        jwtUtil.retrieveUserId(accessToken)
+            ?.let { userRepository.findByIdOrNull(it) }
+            ?.let {
+                it.takeIf { passwordEncoder.matches(passwordRequest.password, it.password) }
+                    ?: throw ApiError.PASSWORD_MISMATCH.toException()
+            }
+            ?.let {
+                refreshTokenService.deleteByAccessToken(jwtUtil.retrieveUUID(accessToken))
+                userRepository.delete(it)
+            }
+            ?: throw ApiError.USER_NOT_FOUND.toException()
+
+    private fun RegisterRequest.toEntity() =
         UserEntity(
             name = name,
             username = username,

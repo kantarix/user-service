@@ -1,12 +1,12 @@
 server:
-  port: 5000
+  port: 5001
 
 schedulers:
   enabled: true
 
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5433/user_service_db
+    url: jdbc:postgresql://localhost:5432/user_service_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -21,7 +21,12 @@ spring:
     enabled: true
 
 jwt:
-  tokenTtlMs: 100000
-  secret: secret
+  tokenTtlMs: 3_600_000
+  secret: ${secret}
 jwtRefresh:
-  tokenTtlMs: 200000
+  tokenTtlMs: 18_000_000
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  show-actuator: false

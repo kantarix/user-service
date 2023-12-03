@@ -21,8 +21,7 @@ class SecurityConfig {
         http
             .csrf().disable()
             .authorizeRequests()
-            .antMatchers("/api/register", "/api/auth", "/api/refresh", "/api/signout").permitAll()
-            .anyRequest().authenticated()
+            .anyRequest().permitAll()
             .and()
             .sessionManagement()
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
