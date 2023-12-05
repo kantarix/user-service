@@ -13,10 +13,10 @@ import java.util.UUID
 
 @Service
 class RefreshTokenService(
-    val refreshTokenRepository: RefreshTokenRepository,
+    private val refreshTokenRepository: RefreshTokenRepository,
 
     @Value("\${jwtRefresh.tokenTtlMs}")
-    val tokenTtlMs: Long,
+    private val tokenTtlMs: Long,
 ) {
 
     @Transactional

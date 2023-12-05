@@ -1,14 +1,19 @@
 package com.kantarix.user_service.api.services
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.kantarix.user_service.api.dto.TokenPair
 import com.kantarix.user_service.api.dto.request.AuthRequest
 import com.kantarix.user_service.api.dto.request.PasswordRequest
 import com.kantarix.user_service.api.dto.request.RefreshTokenRequest
 import com.kantarix.user_service.api.dto.request.RegisterRequest
+import com.kantarix.user_service.api.events.DomainEvent
+import com.kantarix.user_service.api.events.UserDeletedDomainEvent
 import com.kantarix.user_service.api.exceptions.ApiError
+import com.kantarix.user_service.api.repositories.OutboxMessageRepository
 import com.kantarix.user_service.api.repositories.UserRepository
 import com.kantarix.user_service.security.JWTUtil
 import com.kantarix.user_service.security.UserDetails
+import com.kantarix.user_service.store.entities.OutboxMessageEntity
 import com.kantarix.user_service.store.entities.UserEntity
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.security.authentication.AuthenticationManager
@@ -20,11 +25,13 @@ import java.util.UUID
 
 @Service
 class AuthService(
-    val userRepository: UserRepository,
-    val passwordEncoder: PasswordEncoder,
-    val authenticationManager: AuthenticationManager,
-    val jwtUtil: JWTUtil,
-    val refreshTokenService: RefreshTokenService,
+    private val userRepository: UserRepository,
+    private val outboxMessageRepository: OutboxMessageRepository,
+    private val refreshTokenService: RefreshTokenService,
+    private val passwordEncoder: PasswordEncoder,
+    private val authenticationManager: AuthenticationManager,
+    private val jwtUtil: JWTUtil,
+    private val mapper: ObjectMapper,
 ) {
 
     @Transactional
@@ -91,7 +98,7 @@ class AuthService(
         )
 
     @Transactional
-    fun deleteAccount(accessToken: String, passwordRequest: PasswordRequest) =
+    fun deleteAccount(accessToken: String, passwordRequest: PasswordRequest) {
         jwtUtil.retrieveUserId(accessToken)
             ?.let { userRepository.findByIdOrNull(it) }
             ?.let {
@@ -101,14 +108,27 @@ class AuthService(
             ?.let {
                 refreshTokenService.deleteByAccessToken(jwtUtil.retrieveUUID(accessToken))
                 userRepository.delete(it)
+                saveUserDeletedEvent(it.id)
             }
             ?: throw ApiError.USER_NOT_FOUND.toException()
+    }
 
     private fun RegisterRequest.toEntity() =
         UserEntity(
             name = name,
             username = username,
             password = passwordEncoder.encode(password),
+        )
+
+    private fun DomainEvent.toJsonString() =
+        mapper.writeValueAsString(this)
+
+    private fun saveUserDeletedEvent(userId: Int) =
+        outboxMessageRepository.save(
+            OutboxMessageEntity(
+                topic = "USER_DELETED",
+                message = UserDeletedDomainEvent(userId).toJsonString()
+            )
         )
 
 }

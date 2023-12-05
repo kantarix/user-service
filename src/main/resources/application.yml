@@ -19,6 +19,8 @@ spring:
   liquibase:
     change-log: classpath:/db/changelog.yml
     enabled: true
+  kafka:
+    bootstrap-servers: localhost:9092
 
 jwt:
   tokenTtlMs: 3_600_000

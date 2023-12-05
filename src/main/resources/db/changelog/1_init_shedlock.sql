@@ -28,3 +28,11 @@ create table refresh_tokens
     user_id             int not null references users on delete cascade,
     primary key (id)
 );
+
+create table outbox_messages
+(
+    id                  int not null generated always as identity,
+    topic               varchar not null,
+    message             varchar not null,
+    primary key (id)
+);
