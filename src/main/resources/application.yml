@@ -1,0 +1,34 @@
+server:
+  port: 5001
+
+schedulers:
+  enabled: true
+
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/user_service_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+  liquibase:
+    change-log: classpath:/db/changelog.yml
+    enabled: true
+  kafka:
+    bootstrap-servers: localhost:9092
+
+jwt:
+  tokenTtlMs: 3_600_000
+  secret: ${secret}
+jwtRefresh:
+  tokenTtlMs: 18_000_000
+
+springdoc:
+  swagger-ui:
+    enabled: true
+  show-actuator: false
